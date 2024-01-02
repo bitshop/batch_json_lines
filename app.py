@@ -6,12 +6,12 @@ import logging
 from flask import Flask, jsonify, request
 from batch_json_lines import BatchJSONLines
 
+logging.basicConfig(level=logging.INFO)
 if "PREFIX" in os.environ:
     prefix = os.environ["PREFIX"]
 else:
     prefix = "/tmp/"        # pylint: disable=C0103 # This is our default value
     logging.warning("PREFIX env variable is not set, using local filesystem (/tmp)")
-    prefix = "s3://streamlit-sr-test"
 
 buffer = BatchJSONLines(prefix=prefix)
 
