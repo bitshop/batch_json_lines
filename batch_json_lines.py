@@ -10,7 +10,7 @@ import logging
 import os
 import boto3
 
-
+logging.getLogger()
 class BatchJSONLines:
     """
     The BatchJSONLines class handles batching items then flushing to S3

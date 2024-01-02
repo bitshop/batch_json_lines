@@ -6,7 +6,8 @@ import logging
 from flask import Flask, jsonify, request
 from batch_json_lines import BatchJSONLines
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=os.environ.get('LOGLEVEL', 'INFO').upper())
+
 if "PREFIX" in os.environ:
     prefix = os.environ["PREFIX"]
 else:
