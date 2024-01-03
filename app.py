@@ -24,6 +24,7 @@ def send():
     """
     Send a request to be batched for S3, object must be JSON
     """
+    logging.debug("INPUT get_json(): %s", request.get_json())
     buffer.add_request(request.get_json())
     return jsonify(request.get_json())
 

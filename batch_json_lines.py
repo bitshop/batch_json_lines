@@ -80,7 +80,7 @@ class BatchJSONLines:
             now = datetime.now()
             filename = f"{now.year:04}/{now.month:02}/{now.day:02}/{now.hour:02}/{str(uuid.uuid4())}.json"
             # Create string to write
-            output = "\n".join([json.dumps(i) for i in my_requests]) + "\n"
+            output = "\n".join([json.dumps(i, default=str) for i in my_requests]) + "\n"
             logging.info("Writing %d items to %s", len(my_requests), filename)
             # Dump requests to file if s3_bucket is None, otherwise to s3
             if self.prefix.startswith("s3://"):
