@@ -51,7 +51,7 @@ buffer_limit = 100         # pylint: disable=C0103 # This is our default value
 if "BUFFER_LIMIT" in os.environ:
     # Check for number of lines to buffer, if not numeric we will use 100 lines and log a warning
     if os.environ["BUFFER_LIMIT"].isdigit():
-        buffer_limit = os.environ["BUFFER_LIMIT"]
+        buffer_limit = int(os.environ["BUFFER_LIMIT"])
 
 app = Flask(__name__)
 buffer = BatchJSONLines(prefix=prefix, buffer_limit=buffer_limit, flush_interval=flush_interval)
