@@ -17,7 +17,7 @@ class BatchJSONLines:
     
     Keyword arguments:
         buffer_limit -- Maximum number of items to buffer before flushing
-        dump_interval -- Flush approximately every dump_interval seconds
+        flush_interval -- Flush approximately every flush_interval seconds
         s3_bucket -- If provided, dump requests to S3 bucket instead of local file
     
     Example:
@@ -25,7 +25,7 @@ class BatchJSONLines:
     buffer.add_request(request)
     
     """
-    def __init__(self, buffer_limit=100, dump_interval=60, prefix="/tmp"):
+    def __init__(self, buffer_limit=100, flush_interval=60, prefix="/tmp"):
         self.requests = []
         self.s3 = boto3.client("s3")
         self.lock = threading.Lock()
@@ -37,11 +37,13 @@ class BatchJSONLines:
             buffer_limit  # Buffer up to buffer_limit items before flushing
         )
         self.dump_interval = (
-            dump_interval  # Buffer approximately every dump_interval second
+            flush_interval  # Buffer approximately every dump_interval second
         )
         self.next_flush_time = time.time() + self.dump_interval
         # start a thread running self.dump_timer() and pass it a reference to self
-        threading.Thread(target=self._flush_thread, args=()).start()
+        self.background_thread = threading.Thread(target=self._flush_thread, args=())
+        self.stopping = False
+        self.background_thread.start()
 
     def add_request(self, request):
         """
@@ -53,10 +55,23 @@ class BatchJSONLines:
             request -- The request to add to the buffer. 
                 This should be any JSON serializable object
         """
-        with self.lock:
-            self.requests.append(request)
+        try:
+            with self.lock:
+                self.requests.append(request)
+        finally:
+            self.lock.release()
         if len(self.requests) >= self.buffer_limit:
             threading.Thread(target=self.flush, args=()).start()
+
+    def shutdown(self):
+        """
+        Gracefully shutdown
+        """
+        self.stopping = True
+        logging.info("Shutting down")
+        self.flush()
+        self.background_thread.join()
+        logging.info("Shutdown complete")
 
     def flush(self):
         """
@@ -74,9 +89,12 @@ class BatchJSONLines:
         """
         self.next_flush_time = time.time() + self.dump_interval
         if len(self.requests) > 0:
-            with self.lock:
-                my_requests = self.requests[: self.buffer_limit]
-                self.requests = self.requests[self.buffer_limit :]
+            try:
+                with self.lock:
+                    my_requests = self.requests[: self.buffer_limit]
+                    self.requests = self.requests[self.buffer_limit :]
+            finally:
+                self.lock.release()
             now = datetime.now()
             filename = f"{now.year:04}/{now.month:02}/{now.day:02}/{now.hour:02}/{str(uuid.uuid4())}.json"
             # Create string to write
@@ -106,8 +124,8 @@ class BatchJSONLines:
         Raises:
             None
         """
-        while True:
-            time.sleep(self.dump_interval / 5)
+        while not self.stopping:
+            time.sleep(2)
             if self.next_flush_time < time.time():
                 self.flush()
 
@@ -124,6 +142,7 @@ class BatchJSONLines:
         Raises:
             None
         """
+        self.stopping = True
         while len(self.requests) > 0:
             self.flush()
 
@@ -140,6 +159,7 @@ class BatchJSONLines:
         Raises:
             None
         """
+        self.stopping = True
         while len(self.requests) > 0:
             self.flush()
         logging.debug("BatchJSONLines flushed during deletion")
