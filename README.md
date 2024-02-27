@@ -21,7 +21,9 @@ Snowflake uess this format was the original use case, however we are also planni
 The following environment variables can be used to configure the behavior:
 
 `PREFIX` - The directory or S3 prefix to store flushed requests (default: /tmp/)
+
 `FLUSH_INTERVAL` - How often to flush buffered requests, in seconds (default: 120, max: 900)
+
 `BUFFER_LIMIT` - Maximum number of requests to buffer before flushing (default: 100)
 
 # API
