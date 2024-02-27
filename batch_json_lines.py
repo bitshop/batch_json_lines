@@ -55,11 +55,8 @@ class BatchJSONLines:
             request -- The request to add to the buffer. 
                 This should be any JSON serializable object
         """
-        try:
-            with self.lock:
-                self.requests.append(request)
-        finally:
-            self.lock.release()
+        with self.lock:
+            self.requests.append(request)
         if len(self.requests) >= self.buffer_limit:
             threading.Thread(target=self.flush, args=()).start()
 
@@ -89,12 +86,9 @@ class BatchJSONLines:
         """
         self.next_flush_time = time.time() + self.dump_interval
         if len(self.requests) > 0:
-            try:
-                with self.lock:
-                    my_requests = self.requests[: self.buffer_limit]
-                    self.requests = self.requests[self.buffer_limit :]
-            finally:
-                self.lock.release()
+            with self.lock:
+                my_requests = self.requests[: self.buffer_limit]
+                self.requests = self.requests[self.buffer_limit :]
             now = datetime.now()
             filename = f"{now.year:04}/{now.month:02}/{now.day:02}/{now.hour:02}/{str(uuid.uuid4())}.json"
             # Create string to write
