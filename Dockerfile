@@ -4,6 +4,6 @@ COPY . /src/
 WORKDIR /src
 RUN pip install -r requirements.txt
 
-EXPOSE 8000/tcp
+EXPOSE 80/tcp
 # CMD ["/usr/local/bin/python", "app.py"]
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:80", "app:app"]
